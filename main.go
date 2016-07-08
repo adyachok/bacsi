@@ -6,8 +6,8 @@ import (
 	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
 	"fmt"
 	"os"
-	"./openstack/hypervisors"
-	g_servers "./openstack/servers"
+	"./openstack/v2/hypervisors"
+	g_servers "./openstack/v2/servers"
 
 )
 
