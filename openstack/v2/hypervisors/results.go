@@ -17,25 +17,38 @@ type Hypervisor struct {
 }
 
 type HypervisorDetail struct {
+	Hypervisor
 	HostIP string 				`mapstructure:"host_ip"`
 	ServiceHost string			`mapstructure:"service_host"`
-	Id int
 	RunningVMs int				`mapstructure:"running_vms"`
 	FreeDiskGB int16			`mapstructure:"free_disk_gb"`
 	HypervisorVersion int32		`mapstructure:"hypervisor_version"`
 	DistAvailableLeast int16	`mapstructure:"disk_available_least"`
 	LocalGB int16				`mapstructure:"local_gb"`
 	FreeRamMB int32				`mapstructure:"free_ram_mb"`
-	Status string
 	VcpuUsed int16				`mapstructure:"vcpus_used"`
 	HypervisorType string		`mapstructure:"hypervisor_type"`
 	LocalGBUsed	int16			`mapstructure:"local_gb_used"`
 	Vcpus int
-	HypervisorHostname string	`mapstructure:"hypervisor_hostname"`
 	MemoryMBUsed int32			`mapstructure:"memory_mb_used"`
 	MemoryMB int32				`mapstructure:"memory_mb"`
 	CurrentWorkload int			`mapstructure:"current_workload"`
-	State string
+}
+
+type ServerBriefInfo struct {
+	UUID string
+	Name string
+
+}
+
+type HypervisorServersInfo struct {
+	Hypervisor
+	Servers []ServerBriefInfo
+}
+
+type HypervisorUptimeInfo struct {
+	Hypervisor
+	Uptime string
 }
 
 

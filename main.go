@@ -3,11 +3,12 @@ package main
 import (
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
+	//"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
 	"fmt"
 	"os"
-	"./openstack/v2/hypervisors"
-	g_servers "./openstack/v2/servers"
+	//"./openstack/v2/hypervisors"
+	//g_servers "./openstack/v2/servers"
+	"./logic"
 
 )
 
@@ -33,16 +34,21 @@ func main() {
 		TODO: почати з чогось простого
 		 */
 
-	serversMap := make(map[string][]*servers.Server)
-	client := getOpenStackClient()
-	details := hypervisors.ListHypervisorsDetails(client)
-	for _, h_details := range details {
-		hostName := h_details.HypervisorHostname
-		serversList := g_servers.ListServersByHost(client, hostName)
-		serversMap[hostName] = serversList
+	//serversMap := make(map[string][]*servers.Server)
+	//client := getOpenStackClient()
+	//details := hypervisors.ListHypervisorsDetails(client)
+	//for _, h_details := range details {
+	//	hostName := h_details.HypervisorHostname
+	//	serversList := g_servers.ListServersByHost(client, hostName)
+	//	serversMap[hostName] = serversList
+	//}
+	//fmt.Println(serversMap)
+	resp := logic.Responce{}
+	err := logic.GetDataJSON("http://0.0.0.0:8500/v1/health/state/any", &resp)
+	if err != nil {
+		fmt.Println(err)
 	}
-	fmt.Println(serversMap)
-
+	fmt.Println(resp.State)
 }
 
 func getOpenStackClient() *gophercloud.ServiceClient{
