@@ -7,9 +7,10 @@ import (
 
 // TODO: introduce list options for the pagination - marker, limit, page_size
 // as this is defined in gophercloud/openstack/v2/servers/requests.go:{row 25}
+// currently OpenStack paging only supports servers and flavors
 
 // List makes a request against the API to list hypervisors accessible to you
-// in pagination way.
+// in pagination way (Not supported now by OpenStack for hypervisors).
 func ListPaginated(client *gophercloud.ServiceClient) pagination.Pager {
 	url := getListURL(client)
 
@@ -32,7 +33,7 @@ func List(client *gophercloud.ServiceClient) GetResult {
 
 
 // Detailed list makes a request against the API to list details of all
-// hypervisors accessible to you.
+// hypervisors accessible to you (Not supported now by OpenStack for hypervisors).
 func GetDetailesListPaginated(client *gophercloud.ServiceClient) pagination.Pager {
 	url := getDetailedListURL(client)
 
