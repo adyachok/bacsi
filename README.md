@@ -13,6 +13,10 @@ and servers.
 ###Get Started
 To get this information, please, follow [this link](http://gophercloud.io/docs/).
 
+###Tests
+To run tests use next command:
+        ```go test -v -tags fixtures ./...```
 
-This package is created by Phoebet.com team.
+###Authors
+This package is created by **Phoebet.com** team.
 
