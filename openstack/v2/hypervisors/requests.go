@@ -5,6 +5,9 @@ import (
 	"github.com/rackspace/gophercloud/pagination"
 )
 
+// TODO: introduce list options for the pagination - marker, limit, page_size
+// as this is defined in gophercloud/openstack/v2/servers/requests.go:{row 25}
+
 // List makes a request against the API to list hypervisors accessible to you
 // in pagination way.
 func ListPaginated(client *gophercloud.ServiceClient) pagination.Pager {
