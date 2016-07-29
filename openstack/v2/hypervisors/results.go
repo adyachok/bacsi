@@ -5,71 +5,25 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"reflect"
 	"github.com/rackspace/gophercloud/pagination"
-	"strconv"
-	"fmt"
 )
 
-type Hypervisor struct {
-	HypervisorHostname string	`mapstructure:"hypervisor_hostname"`
-	Id int
-	State string
-	Status string
-}
 
-type HypervisorDetail struct {
-	Hypervisor
-	HostIP string 				`mapstructure:"host_ip"`
-	ServiceHost string			`mapstructure:"service_host"`
-	RunningVMs int				`mapstructure:"running_vms"`
-	FreeDiskGB int16			`mapstructure:"free_disk_gb"`
-	HypervisorVersion int32		`mapstructure:"hypervisor_version"`
-	DistAvailableLeast int16	`mapstructure:"disk_available_least"`
-	LocalGB int16				`mapstructure:"local_gb"`
-	FreeRamMB int32				`mapstructure:"free_ram_mb"`
-	VcpuUsed int16				`mapstructure:"vcpus_used"`
-	HypervisorType string		`mapstructure:"hypervisor_type"`
-	LocalGBUsed	int16			`mapstructure:"local_gb_used"`
-	Vcpus int
-	MemoryMBUsed int32			`mapstructure:"memory_mb_used"`
-	MemoryMB int32				`mapstructure:"memory_mb"`
-	CurrentWorkload int			`mapstructure:"current_workload"`
-}
-
-type ServerBriefInfo struct {
-	UUID string
-	Name string
-
-}
-
-type HypervisorServersInfo struct {
-	Hypervisor
-	Servers []ServerBriefInfo
-}
-
-type HypervisorUptimeInfo struct {
-	Hypervisor
-	Uptime string
-}
-
-
-// HypervisorPage abstracts the raw results of making a List() request against the API.
-// As OpenStack extensions may freely alter the response bodies of structures returned to the client, you may only safely access the
-// data provided through the ExtractServers call.
-type HypervisorPage struct {
+// Page is an abstract struct which beholds next page url logic.
+// Pagination logic for every entity have to implement isEmpty function and
+// include field of type Page.
+// Openstack Nova Api allows to send next optional args in request:
+//		limit - max quantity of entities to select
+//		marker - last element viewed by a customer
+//		page_size - quantity of entities on a page
+// Assuming possibly big quantity of hypervisors to extract
+// are implemented paging for hypervisors and hypervisors details
+type Page struct {
 	pagination.LinkedPageBase
 }
 
-// IsEmpty returns true if a page contains no Server results.
-func (page HypervisorPage) IsEmpty() (bool, error) {
-	hypervisors, err := ExtractHypervisors(page)
-	if err != nil {
-		return true, err
-	}
-	return len(hypervisors) == 0, nil
-}
-
-// NextPageURL uses the response's embedded link reference to navigate to the next page of results.
-func (page HypervisorPage) NextPageURL() (string, error) {
+// NextPageURL uses the response's embedded link reference to navigate to the
+// next page of results.
+func (page Page) NextPageURL() (string, error) {
 	type resp struct {
 		Links []gophercloud.Link
 	}
@@ -84,27 +38,76 @@ func (page HypervisorPage) NextPageURL() (string, error) {
 }
 
 
-// ExtractHypervisors interprets the results of a single page from a List() call, producing a slice of Server entities.
+type HypervisorPage struct {
+	Page
+}
+
+// IsEmpty returns true if a page contains no Hypervisor results.
+func (page HypervisorPage) IsEmpty() (bool, error) {
+	hypervisors, err := ExtractHypervisors(page)
+	if err != nil {
+		return true, err
+	}
+	return len(hypervisors) == 0, nil
+}
+
+
+type HypervisorsDetailsPage struct {
+	Page
+}
+
+// IsEmpty returns true if a page contains no Hypervisor results.
+func (page HypervisorsDetailsPage) IsEmpty() (bool, error) {
+	hypervisors, err := ExtractHypervisorsDetails(page)
+	if err != nil {
+		return true, err
+	}
+	return len(hypervisors) == 0, nil
+}
+
+// Decodes response body. Accepts empty entity pointer and initiates
+// this entity with decoded values.
+func processResponse(response interface{}, body interface{}) error{
+	config := &mapstructure.DecoderConfig{
+		DecodeHook: toMapFromString,
+		Result:     response,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(body)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ExtractHypervisors interprets the results of a single page from a List() call,
+// producing a slice of Hypervisor entities.
 func ExtractHypervisors(page pagination.Page) ([]Hypervisor, error) {
 	casted := page.(HypervisorPage).Body
 
 	var response struct {
 		Hypervisors []Hypervisor `mapstructure:"hypervisors"`
 	}
-
-	config := &mapstructure.DecoderConfig{
-		DecodeHook: toMapFromString,
-		Result:     &response,
-	}
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return nil, err
-	}
-
-	err = decoder.Decode(casted)
-
+	err := processResponse(&response, casted)
 	return response.Hypervisors, err
 }
+
+// ExtractHypervisorsDetails interprets the results of a single page from a List() call,
+// producing a slice of HypervisorsDetails entities.
+func ExtractHypervisorsDetails(page pagination.Page) ([]HypervisorDetail, error) {
+	casted := page.(HypervisorsDetailsPage).Body
+
+	var response struct {
+		Hypervisors []HypervisorDetail `mapstructure:"hypervisors"`
+	}
+	err := processResponse(&response, casted)
+	return response.Hypervisors, err
+}
+
 
 type hypervisorResult struct {
 	gophercloud.Result
@@ -116,8 +119,35 @@ type GetResult struct {
 	hypervisorResult
 }
 
+
 // Extract interprets any hypervisorResult as a Hypervisor, if possible.
-func (r hypervisorResult) Extract() (*HypervisorDetail, error) {
+func (r hypervisorResult) Extract() ([]Hypervisor, error) {
+	if r.Err != nil {
+		return nil, r.Err
+	}
+
+	var response struct {
+		Hypervisors []Hypervisor `mapstructure:"hypervisors"`
+	}
+	err := processResponse(&response, r.Body)
+	return response.Hypervisors, err
+}
+
+// Extract interprets any hypervisorResult as a HypervisorDetails, if possible.
+func (r hypervisorResult) ExtractDetails() ([]HypervisorDetail, error) {
+	if r.Err != nil {
+		return nil, r.Err
+	}
+
+	var response struct {
+		Hypervisor []HypervisorDetail `mapstructure:"hypervisors"`
+	}
+	err := processResponse(&response, r.Body)
+	return response.Hypervisor, err
+}
+
+// Extract interprets any hypervisorResult as a HypervisorDetail, if possible.
+func (r hypervisorResult) ExtractDetail() (*HypervisorDetail, error) {
 	if r.Err != nil {
 		return nil, r.Err
 	}
@@ -125,55 +155,39 @@ func (r hypervisorResult) Extract() (*HypervisorDetail, error) {
 	var response struct {
 		Hypervisor HypervisorDetail `mapstructure:"hypervisor"`
 	}
-
-	config := &mapstructure.DecoderConfig{
-		DecodeHook: toMapFromString,
-		Result:     &response,
-	}
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return nil, err
-	}
-
-	err = decoder.Decode(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response.Hypervisor, nil
+	err := processResponse(&response, r.Body)
+	return &response.Hypervisor, err
 }
 
+// Extract interprets any hypervisorResult as a HypervisorServersInfo, if possible.
+func (r hypervisorResult) ExtractServersInfo() ([]HypervisorServersInfo, error) {
+	if r.Err != nil {
+		return nil, r.Err
+	}
+
+	var response struct {
+		Hypervisor []HypervisorServersInfo `mapstructure:"hypervisors"`
+	}
+	err := processResponse(&response, r.Body)
+	return response.Hypervisor, err
+}
+
+// Extract interprets any hypervisorResult as a HypervisorUptime, if possible.
+func (r hypervisorResult) ExtractUptime() (*HypervisorUptimeInfo, error) {
+	if r.Err != nil {
+		return nil, r.Err
+	}
+
+	var response struct {
+		Hypervisor HypervisorUptimeInfo `mapstructure:"hypervisor"`
+	}
+	err := processResponse(&response, r.Body)
+	return &response.Hypervisor, err
+}
 
 func toMapFromString(from reflect.Kind, to reflect.Kind, data interface{}) (interface{}, error) {
 	if (from == reflect.String) && (to == reflect.Map) {
 		return map[string]interface{}{}, nil
 	}
 	return data, nil
-}
-
-
-func ListHypervisorsDetails(client *gophercloud.ServiceClient) (hypervisorsDetailList []*HypervisorDetail){
-	// Retrieve a pager (i.e. a paginated collection)
-	pager := List(client)
-
-	// Define an anonymous function to be executed on each page's iteration
-	err := pager.EachPage(func(page pagination.Page) (bool, error) {
-		hypervisorList, err := ExtractHypervisors(page)
-		if err != nil {
-			return false, err
-		}
-		for _, h := range hypervisorList {
-			// "h" will be a hypervisors.Hypervisor
-			details, err := GetDetail(client, strconv.Itoa(h.Id)).Extract()
-			if err != nil {
-				fmt.Println(err)
-			}
-			hypervisorsDetailList = append(hypervisorsDetailList, details)
-		}
-		return true, nil
-	})
-	if err != nil {
-		fmt.Println(err)
-	}
-	return hypervisorsDetailList
 }

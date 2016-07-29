@@ -4,11 +4,10 @@ import (
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/pagination"
 	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
-	"fmt"
 )
 
 
-func ListServers(client *gophercloud.ServiceClient) {
+func ListServers(client *gophercloud.ServiceClient) (serversList []*servers.Server, error){
 	// We have the option of filtering the server list. If we want the full
 	// collection, leave it as an empty struct
 	opts := servers.ListOpts{AllTenants: true}
@@ -24,18 +23,16 @@ func ListServers(client *gophercloud.ServiceClient) {
 		}
 		for _, s := range serverList {
 			// "s" will be a servers.Server
-			fmt.Println(s.ID)
+			serversList = append(serversList, s)
 
 		}
 		return true, nil
 	})
-	if err != nil {
-		fmt.Println(err)
-	}
+	return &serversList, err
 }
 
 // ListServersByHost create a list of instances booted on a host
-func ListServersByHost(client *gophercloud.ServiceClient, hostName string) (serversList []*servers.Server) {
+func ListServersByHost(client *gophercloud.ServiceClient, hostName string) (serversList []*servers.Server, error) {
 	// We have the option of filtering the server list. If we want the full
 	// collection, leave it as an empty struct
 	opts := servers.ListOpts{Host: hostName, AllTenants: true}
@@ -56,8 +53,5 @@ func ListServersByHost(client *gophercloud.ServiceClient, hostName string) (serv
 		}
 		return true, nil
 	})
-	if err != nil {
-		fmt.Println(err)
-	}
-	return serversList
+	return &serversList, err
 }
