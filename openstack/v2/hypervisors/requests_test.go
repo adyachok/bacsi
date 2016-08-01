@@ -3,42 +3,10 @@ package hypervisors
 import (
 	"testing"
 
-	"github.com/rackspace/gophercloud/pagination"
 	th "github.com/rackspace/gophercloud/testhelper"
 	"github.com/rackspace/gophercloud/testhelper/client"
 )
 
-func TestListPaginatedHypervisors(t *testing.T) {
-	th.SetupHTTP()
-	defer th.TeardownHTTP()
-	HandleHypervisorsListSuccessfully(t)
-
-	pages := 0
-	err := ListPaginated(client.ServiceClient()).EachPage(func(page pagination.Page) (bool, error) {
-		pages++
-
-		actual, err := ExtractHypervisors(page)
-		if err != nil {
-			return false, err
-		}
-
-		if len(actual) != 3 {
-			t.Fatalf("Expected 3 hypervisors, got %d", len(actual))
-		}
-		th.CheckDeepEquals(t, ListHypervisorsExpected[0], actual[0])
-		th.CheckDeepEquals(t, ListHypervisorsExpected[1], actual[1])
-		th.CheckDeepEquals(t, ListHypervisorsExpected[2], actual[2])
-
-
-		return true, nil
-	})
-
-	th.AssertNoErr(t, err)
-
-	if pages != 1 {
-		t.Errorf("Expected 1 page, saw %d", pages)
-	}
-}
 
 func TestListHypervisors(t *testing.T) {
 	th.SetupHTTP()
@@ -56,39 +24,6 @@ func TestListHypervisors(t *testing.T) {
 	th.CheckDeepEquals(t, ListHypervisorsExpected[0], actual[0])
 	th.CheckDeepEquals(t, ListHypervisorsExpected[1], actual[1])
 	th.CheckDeepEquals(t, ListHypervisorsExpected[2], actual[2])
-}
-
-func TestDetailedHypervisorsListPaginated(t *testing.T) {
-	th.SetupHTTP()
-	defer th.TeardownHTTP()
-	HandleHypervisorsDetailsSuccessfully(t)
-
-	pages := 0
-
-	err := GetDetailesListPaginated(client.ServiceClient()).EachPage(func(page pagination.Page) (bool, error) {
-		pages++
-
-		actual, err := ExtractHypervisorsDetails(page)
-		if err != nil {
-			return false, err
-		}
-
-		if len(actual) != 3 {
-			t.Fatalf("Expected 3 hypervisors, got %d", len(actual))
-		}
-		th.CheckDeepEquals(t, HypervisorsDetailsListExpected[0], actual[0])
-		th.CheckDeepEquals(t, HypervisorsDetailsListExpected[1], actual[1])
-		th.CheckDeepEquals(t, HypervisorsDetailsListExpected[2], actual[2])
-
-
-		return true, nil
-	})
-
-	th.AssertNoErr(t, err)
-
-	if pages != 1 {
-		t.Errorf("Expected 1 page, saw %d", pages)
-	}
 }
 
 func TestListDetailsHypervisors(t *testing.T) {

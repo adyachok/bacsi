@@ -2,7 +2,6 @@ package hypervisors
 
 import (
 	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/pagination"
 )
 
 // TODO: introduce list options for the pagination - marker, limit, page_size
@@ -11,17 +10,6 @@ import (
 
 // List makes a request against the API to list hypervisors accessible to you
 // in pagination way (Not supported now by OpenStack for hypervisors).
-func ListPaginated(client *gophercloud.ServiceClient) pagination.Pager {
-	url := getListURL(client)
-
-	createPageFn := func(r pagination.PageResult) pagination.Page {
-		return HypervisorPage{Page{pagination.LinkedPageBase{PageResult: r}}}
-	}
-
-	return pagination.NewPager(client, url, createPageFn)
-}
-
-// List makes a request against the API to list hypervisors accessible to you.
 func List(client *gophercloud.ServiceClient) GetResult {
 	var result GetResult
 	_, result.Err = client.Get(getListURL(client),
@@ -29,19 +17,6 @@ func List(client *gophercloud.ServiceClient) GetResult {
 			OkCodes: []int{200, 203},
 		})
 	return result
-}
-
-
-// Detailed list makes a request against the API to list details of all
-// hypervisors accessible to you (Not supported now by OpenStack for hypervisors).
-func GetDetailesListPaginated(client *gophercloud.ServiceClient) pagination.Pager {
-	url := getDetailedListURL(client)
-
-	createPageFn := func(r pagination.PageResult) pagination.Page {
-		return HypervisorsDetailsPage{Page{pagination.LinkedPageBase{PageResult: r}}}
-	}
-
-	return pagination.NewPager(client, url, createPageFn)
 }
 
 // Get details about specified by id hypervisor

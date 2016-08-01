@@ -3,26 +3,20 @@ package main
 import (
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
 	"fmt"
 	"os"
 	"./openstack/v2/hypervisors"
-	g_servers "./openstack/v2/servers"
-
-
 )
 
-
+// Example how to create admin client and use it to query
+// Nova about hypervisors info
 func main() {
-	serversMap := make(map[string][]*servers.Server)
 	client := getOpenStackClient()
-	details, _ := hypervisors.List(client).Extract()
-	for _, h_details := range details {
-		hostName := h_details.HypervisorHostname
-		serversList, _ := g_servers.ListServersByHost(client, hostName)
-		serversMap[hostName] = serversList
+	list, _ := hypervisors.List(client).Extract()
+	for _, hyp := range list {
+		fmt.Println(hyp.HypervisorHostname)
 	}
-	fmt.Println(serversMap)
+
 }
 
 func getOpenStackClient() *gophercloud.ServiceClient{

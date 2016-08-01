@@ -4,66 +4,8 @@ import (
 	"github.com/rackspace/gophercloud"
 	"github.com/mitchellh/mapstructure"
 	"reflect"
-	"github.com/rackspace/gophercloud/pagination"
 )
 
-
-// Page is an abstract struct which beholds next page url logic.
-// Pagination logic for every entity have to implement isEmpty function and
-// include field of type Page.
-// Openstack Nova Api allows to send next optional args in request:
-//		limit - max quantity of entities to select
-//		marker - last element viewed by a customer
-//		page_size - quantity of entities on a page
-// Assuming possibly big quantity of hypervisors to extract
-// are implemented paging for hypervisors and hypervisors details
-type Page struct {
-	pagination.LinkedPageBase
-}
-
-// NextPageURL uses the response's embedded link reference to navigate to the
-// next page of results.
-func (page Page) NextPageURL() (string, error) {
-	type resp struct {
-		Links []gophercloud.Link
-	}
-
-	var r resp
-	err := mapstructure.Decode(page.Body, &r)
-	if err != nil {
-		return "", err
-	}
-
-	return gophercloud.ExtractNextURL(r.Links)
-}
-
-
-type HypervisorPage struct {
-	Page
-}
-
-// IsEmpty returns true if a page contains no Hypervisor results.
-func (page HypervisorPage) IsEmpty() (bool, error) {
-	hypervisors, err := ExtractHypervisors(page)
-	if err != nil {
-		return true, err
-	}
-	return len(hypervisors) == 0, nil
-}
-
-
-type HypervisorsDetailsPage struct {
-	Page
-}
-
-// IsEmpty returns true if a page contains no Hypervisor results.
-func (page HypervisorsDetailsPage) IsEmpty() (bool, error) {
-	hypervisors, err := ExtractHypervisorsDetails(page)
-	if err != nil {
-		return true, err
-	}
-	return len(hypervisors) == 0, nil
-}
 
 // Decodes response body. Accepts empty entity pointer and initiates
 // this entity with decoded values.
@@ -81,38 +23,12 @@ func processResponse(response interface{}, body interface{}) error{
 	if err != nil {
 		return err
 	}
-	return nil
+	return err
 }
-
-// ExtractHypervisors interprets the results of a single page from a List() call,
-// producing a slice of Hypervisor entities.
-func ExtractHypervisors(page pagination.Page) ([]Hypervisor, error) {
-	casted := page.(HypervisorPage).Body
-
-	var response struct {
-		Hypervisors []Hypervisor `mapstructure:"hypervisors"`
-	}
-	err := processResponse(&response, casted)
-	return response.Hypervisors, err
-}
-
-// ExtractHypervisorsDetails interprets the results of a single page from a List() call,
-// producing a slice of HypervisorsDetails entities.
-func ExtractHypervisorsDetails(page pagination.Page) ([]HypervisorDetail, error) {
-	casted := page.(HypervisorsDetailsPage).Body
-
-	var response struct {
-		Hypervisors []HypervisorDetail `mapstructure:"hypervisors"`
-	}
-	err := processResponse(&response, casted)
-	return response.Hypervisors, err
-}
-
 
 type hypervisorResult struct {
 	gophercloud.Result
 }
-
 
 // GetResult temporarily contains the response from a Get call.
 type GetResult struct {

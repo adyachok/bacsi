@@ -1,12 +1,11 @@
-Golem
+Bacsi
 =====
 
 ###About
 This project is extension of [Rackspace Gophercloud project](http://gophercloud.io/).
 
 Main reason: give admin go-tools to get more information about cloud.
-Project provides client for extracting information aabout hypervisors 
-and servers.
+Project provides client for extracting information about *hypervisors*.
  
 **Warning!** To get this info - admin context required.
 
